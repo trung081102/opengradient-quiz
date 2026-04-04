@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenGradient Quiz Challenge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:   #6C63FF;
+      --bg1:     #0f0c29;
+      --bg2:     #302b63;
+      --bg3:     #24243e;
+      --c1:      #FF6B9D;
+      --c2:      #00D4FF;
+      --c3:      #7DFF4F;
+      --c4:      #FFB340;
+      --correct: #2ecc71;
+      --wrong:   #e74c3c;
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+      background-attachment: fixed;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* ---------- STARS ---------- */
+    #stars {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .star {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,.75);
+      animation: twinkle var(--dur, 3s) ease-in-out infinite alternate;
+    }
+    @keyframes twinkle {
+      from { opacity: .1; transform: scale(.7); }
+      to   { opacity:  1; transform: scale(1.3); }
+    }
+
+    /* ---------- APP WRAPPER ---------- */
+    #app {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+
+    /* ---------- SCREENS ---------- */
+    .screen { display: none; width: 100%; max-width: 840px; }
+    .screen.active { display: block; animation: fadeUp .5s ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== INTRO SCREEN ========== */
+    #intro { text-align: center; }
+
+    .logo-wrap {
+      display: inline-flex; align-items: center; gap: 12px;
+      margin-bottom: 24px;
+    }
+    .logo-icon {
+      width: 58px; height: 58px;
+      background: var(--brand);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900; font-family: 'Nunito', sans-serif;
+      box-shadow: 0 0 28px rgba(108,99,255,.7);
+      letter-spacing: -.5px;
+    }
+    .logo-text {
+      font-family: 'Nunito', sans-serif;
+      font-size: 26px; font-weight: 900;
+      background: linear-gradient(90deg, var(--brand), var(--c2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #intro h1 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 900; line-height: 1.15;
+      margin-bottom: 14px;
+      text-shadow: 0 4px 24px rgba(108,99,255,.5);
+    }
+    #intro h1 em { font-style: normal; color: var(--brand); }
+    #intro p {
+      font-size: 1rem; color: rgba(255,255,255,.68);
+      margin-bottom: 32px; line-height: 1.65;
+    }
+
+    .intro-stats {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 16px; margin-bottom: 36px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 18px; padding: 16px 28px;
+      text-align: center; backdrop-filter: blur(8px);
+      min-width: 100px;
+    }
+    .stat-card .num {
+      font-family: 'Nunito', sans-serif;
+      font-size: 2rem; font-weight: 900; color: var(--brand);
+    }
+    .stat-card .lbl {
+      font-size: .72rem; color: rgba(255,255,255,.5);
+      text-transform: uppercase; letter-spacing: .1em; margin-top: 3px;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--brand), #9b59b6);
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.15rem; font-weight: 900;
+      padding: 16px 56px; border-radius: 50px; border: none;
+      cursor: pointer; letter-spacing: .05em;
+      box-shadow: 0 8px 32px rgba(108,99,255,.5);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-primary:hover  { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(108,99,255,.7); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .key-hint {
+      margin-top: 16px; font-size: .8rem; color: rgba(255,255,255,.38);
+    }
+    .key-hint kbd {
+      background: rgba(255,255,255,.12); border-radius: 5px;
+      padding: 2px 7px; font-family: monospace; font-size: .82rem;
+    }
+
+    /* ========== QUIZ SCREEN ========== */
+    .quiz-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+    }
+    .q-counter {
+      font-size: .78rem; font-weight: 700;
+      color: rgba(255,255,255,.5);
+      text-transform: uppercase; letter-spacing: .12em;
+    }
+    .score-pill {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 50px; padding: 6px 20px;
+      font-family: 'Nunito', sans-serif;
+      font-size: .95rem; font-weight: 800;
+      color: var(--c3);
+    }
+    .score-pill .lbl { color: rgba(255,255,255,.45); font-size: .75rem; font-weight: 600; }
+
+    /* Timer */
+    .timer-wrap { margin-bottom: 16px; }
+    .timer-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .timer-label { font-size: .75rem; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .1em; }
+    .timer-num {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.5rem; font-weight: 900;
+      min-width: 34px; text-align: right;
+      transition: color .3s;
+    }
+    .timer-num.warn   { color: var(--c4); }
+    .timer-num.danger { color: var(--wrong); animation: blink .45s ease infinite alternate; }
+    @keyframes blink { from { opacity: 1; } to { opacity: .5; } }
+
+    .timer-track {
+      height: 10px; background: rgba(255,255,255,.1);
+      border-radius: 10px; overflow: hidden;
+    }
+    .timer-fill {
+      height: 100%; border-radius: 10px;
+      background: linear-gradient(90deg, var(--brand), var(--c2));
+      transition: width .95s linear, background .4s;
+    }
+    .timer-fill.warn   { background: linear-gradient(90deg, var(--c4), #ff6b35); }
+    .timer-fill.danger { background: linear-gradient(90deg, var(--wrong), #c0392b); }
+
+    /* Streak */
+    .streak-row { min-height: 22px; margin-bottom: 8px; text-align: center; font-size: .82rem; color: rgba(255,255,255,.45); }
+    .streak-row .fire-txt { color: var(--c4); }
+
+    /* Category badge */
+    .cat-badge {
+      display: inline-block;
+      padding: 4px 14px; border-radius: 50px;
+      font-size: .7rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .12em;
+      margin-bottom: 10px;
+    }
+    .cat-BASIC      { background: rgba(0,212,255,.15);   border: 1px solid rgba(0,212,255,.4);   color: var(--c2); }
+    .cat-TECHNICAL  { background: rgba(255,107,157,.15); border: 1px solid rgba(255,107,157,.4); color: var(--c1); }
+    .cat-PRODUCTS   { background: rgba(125,255,79,.15);  border: 1px solid rgba(125,255,79,.4);  color: var(--c3); }
+    .cat-TOKENOMICS { background: rgba(255,179,64,.15);  border: 1px solid rgba(255,179,64,.4);  color: var(--c4); }
+    .cat-TEAM       { background: rgba(108,99,255,.2);   border: 1px solid rgba(108,99,255,.5);  color: var(--brand); }
+
+    /* Question card */
+    .q-card {
+      background: rgba(255,255,255,.065);
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 24px; padding: 26px 30px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(12px);
+      animation: slideIn .45s cubic-bezier(.34,1.4,.64,1) both;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(55px) scale(.96); }
+      to   { opacity: 1; transform: translateX(0)   scale(1); }
+    }
+    .q-text {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(1rem, 2.8vw, 1.3rem);
+      font-weight: 800; line-height: 1.5;
+    }
+
+    /* Answer buttons */
+    .answers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 13px;
+    }
+    @media (max-width: 520px) {
+      .answers-grid { grid-template-columns: 1fr; }
+      .q-card { padding: 18px 16px; }
+    }
+
+    .ans-btn {
+      display: flex; align-items: center; gap: 13px;
+      padding: 15px 18px; border-radius: 18px;
+      border: 2px solid rgba(255,255,255,.13);
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      font-size: .93rem; font-weight: 700; color: #fff;
+      text-align: left; line-height: 1.35;
+      transition: transform .12s, box-shadow .12s;
+      animation: fadeUp .4s ease both;
+    }
+    .ans-btn:nth-child(1) { background: linear-gradient(135deg,#c2185b,#e91e8c); animation-delay:.04s; }
+    .ans-btn:nth-child(2) { background: linear-gradient(135deg,#0d47a1,#1976d2); animation-delay:.09s; }
+    .ans-btn:nth-child(3) { background: linear-gradient(135deg,#1b5e20,#388e3c); animation-delay:.14s; }
+    .ans-btn:nth-child(4) { background: linear-gradient(135deg,#bf360c,#e64a19); animation-delay:.19s; }
+
+    .ans-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 28px rgba(0,0,0,.4); }
+    .ans-btn:active:not(:disabled) { transform: scale(.98); }
+    .ans-btn:disabled { cursor: default; }
+
+    .key-badge {
+      min-width: 32px; height: 32px;
+      background: rgba(0,0,0,.28); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Nunito', sans-serif; font-size: .9rem; font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    /* Answer states */
+    .ans-btn.state-correct {
+      background: linear-gradient(135deg,#27ae60,#2ecc71) !important;
+      border-color: #2ecc71 !important;
+      box-shadow: 0 0 0 4px rgba(46,204,113,.3), 0 8px 32px rgba(46,204,113,.4);
+      animation: popCorrect .5s ease !important;
+    }
+    .ans-btn.state-wrong {
+      background: linear-gradient(135deg,#c0392b,#e74c3c) !important;
+      border-color: #e74c3c !important;
+      animation: shakeIt .4s ease !important;
+      filter: brightness(.85);
+    }
+    .ans-btn.state-reveal {
+      background: linear-gradient(135deg,#27ae60,#2ecc71) !important;
+      border-color: #2ecc71 !important;
+      opacity: .8;
+    }
+    .ans-btn.state-dim { opacity: .3; filter: grayscale(.7); }
+
+    @keyframes popCorrect {
+      0%   { transform: scale(1); }
+      45%  { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shakeIt {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-9px); }
+      75%     { transform: translateX(9px); }
+    }
+
+    /* ========== FLOATING POPUP ========== */
+    #pts-popup {
+      position: fixed;
+      top: 38%; left: 50%;
+      transform: translate(-50%,-50%) scale(0);
+      z-index: 900; pointer-events: none;
+      font-family: 'Nunito', sans-serif;
+      font-size: 2.2rem; font-weight: 900;
+      padding: 16px 40px; border-radius: 22px;
+      white-space: nowrap; text-align: center;
+    }
+    #pts-popup.pop-correct { background: linear-gradient(135deg,#27ae60,#2ecc71); color:#fff; box-shadow:0 16px 48px rgba(46,204,113,.55); }
+    #pts-popup.pop-wrong   { background: linear-gradient(135deg,#c0392b,#e74c3c); color:#fff; box-shadow:0 16px 48px rgba(231,76,60,.5); }
+    #pts-popup.pop-timeout { background: linear-gradient(135deg,#636e72,#b2bec3); color:#fff; box-shadow:0 16px 48px rgba(0,0,0,.3); }
+    #pts-popup.pop-show    { animation: popAnim .95s cubic-bezier(.34,1.56,.64,1) both; }
+    @keyframes popAnim {
+      0%   { transform: translate(-50%,-50%) scale(0);   opacity: 0; }
+      35%  { transform: translate(-50%,-58%) scale(1.1); opacity: 1; }
+      65%  { transform: translate(-50%,-62%) scale(1);   opacity: 1; }
+      100% { transform: translate(-50%,-80%) scale(.85); opacity: 0; }
+    }
+
+    /* ========== CONFETTI ========== */
+    .cf {
+      position: fixed; z-index: 850; pointer-events: none;
+      animation: cfFall var(--d,1s) ease-in forwards;
+    }
+    @keyframes cfFall {
+      0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(.4); opacity: 0; }
+    }
+
+    /* ========== TRANSITION NUMBER ========== */
+    #q-transition {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      font-family: 'Nunito', sans-serif;
+      font-size: 5rem; font-weight: 900;
+      color: var(--brand);
+    }
+    #q-transition.show {
+      display: flex;
+      animation: transFlash .42s ease both;
+    }
+    @keyframes transFlash {
+      0%   { opacity: 0; }
+      25%  { opacity: 1; }
+      75%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ========== END SCREEN ========== */
+    #end { text-align: center; }
+
+    .end-card {
+      position: relative;
+      background: rgba(255,255,255,.065);
+      border-radius: 32px; padding: 44px 32px;
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+    .end-card::before {
+      content: '';
+      position: absolute; inset: -2px;
+      background: linear-gradient(135deg, var(--brand), var(--c2), var(--c3), var(--brand));
+      background-size: 300% 300%;
+      border-radius: 34px; z-index: -1;
+      animation: borderGlow 3s ease infinite;
+    }
+    @keyframes borderGlow {
+      0%   { background-position:   0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position:   0% 50%; }
+    }
+
+    .grade-circle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 100px; height: 100px; border-radius: 50%;
+      font-family: 'Nunito', sans-serif; font-size: 3rem; font-weight: 900;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.35);
+      animation: gradeIn .7s cubic-bezier(.34,1.56,.64,1) .25s both;
+    }
+    @keyframes gradeIn {
+      from { transform: scale(0) rotate(-25deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+    }
+    .gS { background: linear-gradient(135deg,#f39c12,#f1c40f); }
+    .gA { background: linear-gradient(135deg,#27ae60,#2ecc71); }
+    .gB { background: linear-gradient(135deg,#2980b9,#3498db); }
+    .gC { background: linear-gradient(135deg,#8e44ad,#9b59b6); }
+    .gD { background: linear-gradient(135deg,#7f8c8d,#95a5a6); }
+
+    #end h2 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(1.4rem, 4.5vw, 2rem);
+      font-weight: 900; margin-bottom: 8px;
+    }
+    .end-msg {
+      font-size: .98rem; color: rgba(255,255,255,.62);
+      margin-bottom: 28px; line-height: 1.6;
+    }
+
+    .end-stats {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 14px; margin-bottom: 28px;
+    }
+    .es {
+      background: rgba(255,255,255,.07);
+      border-radius: 18px; padding: 14px 22px; min-width: 100px;
+    }
+    .es .v {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.9rem; font-weight: 900; line-height: 1;
+    }
+    .es .l { font-size: .68rem; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .1em; margin-top: 4px; }
+
+    .lb-title {
+      font-size: .78rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .12em;
+      color: rgba(255,255,255,.4); margin-bottom: 12px;
+    }
+    .lb-list { list-style: none; text-align: left; margin-bottom: 26px; }
+    .lb-row {
+      display: flex; align-items: center; gap: 13px;
+      padding: 10px 15px; border-radius: 14px; margin-bottom: 8px;
+      background: rgba(255,255,255,.05);
+      animation: fadeUp .4s ease both;
+    }
+    .lb-row:nth-child(1) { background: rgba(241,196,15,.1);  border: 1px solid rgba(241,196,15,.25); animation-delay: .08s; }
+    .lb-row:nth-child(2) { background: rgba(189,195,199,.07); border: 1px solid rgba(189,195,199,.2); animation-delay: .16s; }
+    .lb-row:nth-child(3) { background: rgba(210,105,30,.07);  border: 1px solid rgba(210,105,30,.22); animation-delay: .24s; }
+    .lb-row.is-you       { background: rgba(108,99,255,.2) !important; border: 1px solid rgba(108,99,255,.5) !important; }
+    .lb-rank  { font-family:'Nunito',sans-serif; font-size:1.1rem; font-weight:900; min-width:26px; text-align:center; }
+    .lb-name  { flex:1; font-weight:600; }
+    .lb-score { font-family:'Nunito',sans-serif; font-weight:800; color:var(--c3); }
+
+    .btn-restart {
+      background: linear-gradient(135deg, var(--brand), var(--c2));
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.05rem; font-weight: 900;
+      padding: 14px 48px; border-radius: 50px; border: none;
+      cursor: pointer; letter-spacing: .05em;
+      box-shadow: 0 8px 32px rgba(108,99,255,.45);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-restart:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(108,99,255,.6); }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div id="app">
+
+  <!-- ===== INTRO ===== -->
+  <div id="intro" class="screen active">
+    <div class="logo-wrap">
+      <div class="logo-icon">OG</div>
+      <div class="logo-text">OpenGradient</div>
+    </div>
+    <h1>Quiz <em>Challenge</em><br>OpenGradient</h1>
+    <p>
+      Kiem tra kien thuc cua ban ve mang ha tang AI phi tap trung hang dau!<br>
+      15 cau hoi &bull; 20 giay moi cau &bull; Toi da 1500 diem
+    </p>
+    <div class="intro-stats">
+      <div class="stat-card"><div class="num">15</div><div class="lbl">Cau hoi</div></div>
+      <div class="stat-card"><div class="num">20s</div><div class="lbl">Moi cau</div></div>
+      <div class="stat-card"><div class="num">1500</div><div class="lbl">Max diem</div></div>
+      <div class="stat-card"><div class="num">+50</div><div class="lbl">Speed bonus</div></div>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">BAT DAU NGAY!</button>
+    <div class="key-hint">
+      Phim tat: <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> chon dap an &nbsp;|&nbsp; <kbd>Enter</kbd> bat dau
+    </div>
+  </div>
+
+  <!-- ===== QUIZ ===== -->
+  <div id="quiz" class="screen">
+    <div class="quiz-header">
+      <div class="q-counter" id="q-counter">CAU 1 / 15</div>
+      <div class="score-pill"><span class="lbl">DIEM </span><span id="score-val">0</span></div>
+    </div>
+
+    <div class="timer-wrap">
+      <div class="timer-row">
+        <span class="timer-label">Thoi gian</span>
+        <span class="timer-num" id="timer-num">20</span>
+      </div>
+      <div class="timer-track">
+        <div class="timer-fill" id="timer-fill" style="width:100%"></div>
+      </div>
+    </div>
+
+    <div class="streak-row" id="streak-row"></div>
+
+    <span class="cat-badge" id="cat-badge">BASIC</span>
+    <div class="q-card" id="q-card">
+      <div class="q-text" id="q-text"></div>
+    </div>
+    <div class="answers-grid" id="answers-grid"></div>
+  </div>
+
+  <!-- ===== END ===== -->
+  <div id="end" class="screen">
+    <div class="end-card">
+      <div class="grade-circle" id="grade-circle"></div>
+      <h2 id="end-title"></h2>
+      <div class="end-msg" id="end-msg"></div>
+      <div class="end-stats">
+        <div class="es"><div class="v" id="es-score" style="color:var(--brand)"></div><div class="l">Tong diem</div></div>
+        <div class="es"><div class="v" id="es-correct" style="color:var(--c3)"></div><div class="l">Cau dung</div></div>
+        <div class="es"><div class="v" id="es-pct" style="color:var(--c2)"></div><div class="l">Ty le</div></div>
+        <div class="es"><div class="v" id="es-streak" style="color:var(--c4)"></div><div class="l">Max streak</div></div>
+      </div>
+      <div class="lb-title">BANG XEP HANG</div>
+      <ul class="lb-list" id="lb-list"></ul>
+      <button class="btn-restart" onclick="restartQuiz()">CHOI LAI</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Floating points popup -->
+<div id="pts-popup"></div>
+
+<!-- Question number transition -->
+<div id="q-transition"></div>
+
+<script>
+var QUESTIONS = [
+  { cat: 'BASIC', q: 'OpenGradient la gi?', opts: ['Mang ha tang phi tap trung ket hop blockchain voi AI/ML inference','San giao dich crypto tap trung','Vi tien dien tu da chuoi','Nen tang NFT marketplace'], correct: 0 },
+  { cat: 'TECHNICAL', q: 'HACA trong OpenGradient viet tat cua gi?', opts: ['High Accuracy Computing Architecture','Hybrid AI Compute Architecture','Hashed Algorithm Chain Automation','Hosted AI Cloud Application'], correct: 1 },
+  { cat: 'TECHNICAL', q: 'OpenGradient su dung blockchain nao lam nen tang chinh?', opts: ['Ethereum mainnet','Solana','CometBFT blockchain','Binance Smart Chain'], correct: 2 },
+  { cat: 'PRODUCTS', q: 'Model Hub cua OpenGradient co bao nhieu model?', opts: ['500+ models','1000+ models','1500+ models','2000+ models'], correct: 2 },
+  { cat: 'PRODUCTS', q: 'BitQuant Subnet chay tren mang nao?', opts: ['Ethereum','Bittensor (Subnet 15)','Polkadot','Cosmos'], correct: 1 },
+  { cat: 'PRODUCTS', q: 'MemSync la gi trong he sinh thai OpenGradient?', opts: ['Cong cu trading DeFi tu dong','Marketplace cho AI agents','Lop bo nho dai han cho cac AI assistant','Blockchain explorer'], correct: 2 },
+  { cat: 'TECHNICAL', q: 'Phuong phap xac minh nao trong OpenGradient co computational overhead cao nhat?', opts: ['TEE (Trusted Execution Environment)','Vanilla (chu ky don thuan)','ZKML (Zero-Knowledge ML)','PoW (Proof of Work)'], correct: 2 },
+  { cat: 'PRODUCTS', q: 'Twin.fun la gi?', opts: ['Game blockchain Play-to-Earn','DEX aggregator tong hop','Marketplace cho AI digital twins cua nguoi that','Cong cu phan tich on-chain'], correct: 2 },
+  { cat: 'BASIC', q: 'OpenGradient duoc thanh lap vao nam nao?', opts: ['2021','2022','2023','2024'], correct: 3 },
+  { cat: 'TOKENOMICS', q: 'Tong nguon cung token OPG la bao nhieu?', opts: ['100 trieu token','500 trieu token','1 ty token (1B)','10 ty token'], correct: 2 },
+  { cat: 'TEAM', q: 'Ai la CEO cua OpenGradient?', opts: ['Adam Balogh','Matthew Wang','Vitalik Buterin','Sam Altman'], correct: 1 },
+  { cat: 'BASIC', q: 'OpenGradient da nhan duoc tong so von dau tu la bao nhieu?', opts: ['$5 trieu','$9.5 trieu','$15 trieu','$25 trieu'], correct: 1 },
+  { cat: 'TECHNICAL', q: 'SolidML trong OpenGradient dung de lam gi?', opts: ['Phan tich du lieu on-chain theo thoi gian thuc','Thu vien Solidity de tich hop AI vao EVM smart contracts','Cong cu kiem tra bao mat smart contract','Dashboard quan ly validator node'], correct: 1 },
+  { cat: 'PRODUCTS', q: 'BitQuant da xu ly bao nhieu sessions truoc khi ra mat chinh thuc?', opts: ['1 trieu sessions','2.5 trieu sessions','4.7 trieu sessions','10 trieu sessions'], correct: 2 },
+  { cat: 'TECHNICAL', q: 'OpenGradient tuong thich voi nhom blockchain nao sau day?', opts: ['Bitcoin, Litecoin, Dogecoin','Ethereum, BNB Chain, Solana, Base, Sui','Avalanche, Fantom, Harmony','Tron, EOS, Cardano'], correct: 1 }
+];
+
+var FAKE_LEADERS = [
+  { name: 'CryptoWizard_VN', score: 1450 },
+  { name: 'BlockchainPro',   score: 1350 },
+  { name: 'AI_Hunter99',     score: 1200 },
+  { name: 'OGmaster_2024',   score: 1050 }
+];
+
+var TIMER_MAX = 20, BASE_PTS = 100, SPEED_BONUS = 50;
+var S = {};
+
+function resetState() {
+  S = { qi:0, score:0, correct:0, streak:0, maxStreak:0, answered:false, timeLeft:TIMER_MAX, startMs:0, timer:null };
+}
+
+function buildStars() {
+  var el = document.getElementById('stars');
+  el.innerHTML = '';
+  var n = Math.floor(window.innerWidth * window.innerHeight / 5500);
+  for (var i = 0; i < n; i++) {
+    var s = document.createElement('div');
+    s.className = 'star';
+    var sz = (Math.random() * 2.2 + 0.4).toFixed(1);
+    s.style.cssText = ['width:'+sz+'px','height:'+sz+'px','left:'+(Math.random()*100).toFixed(2)+'%','top:'+(Math.random()*100).toFixed(2)+'%','--dur:'+(Math.random()*3+1.8).toFixed(1)+'s'].join(';');
+    el.appendChild(s);
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById(id);
+  el.classList.add('active');
+  el.style.animation = 'none'; void el.offsetHeight; el.style.animation = '';
+}
+
+function startQuiz() { resetState(); showScreen('quiz'); loadQ(); }
+
+function loadQ() {
+  var q = QUESTIONS[S.qi];
+  S.answered = false; S.timeLeft = TIMER_MAX; S.startMs = Date.now();
+  document.getElementById('q-counter').textContent = 'CAU '+(S.qi+1)+' / '+QUESTIONS.length;
+  document.getElementById('score-val').textContent = S.score;
+  var badge = document.getElementById('cat-badge');
+  badge.textContent = q.cat; badge.className = 'cat-badge cat-'+q.cat;
+  document.getElementById('q-text').textContent = q.q;
+  var card = document.getElementById('q-card');
+  card.style.animation = 'none'; void card.offsetHeight; card.style.animation = '';
+  var grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  q.opts.forEach(function(opt,i){
+    var btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.innerHTML = '<span class="key-badge">'+(i+1)+'</span><span>'+opt+'</span>';
+    btn.addEventListener('click', function(){ selectAnswer(i); });
+    grid.appendChild(btn);
+  });
+  updateStreakRow(); startTimer();
+}
+
+function startTimer() {
+  clearInterval(S.timer); updateTimerUI();
+  S.timer = setInterval(function(){
+    S.timeLeft--; updateTimerUI();
+    if (S.timeLeft <= 0) { clearInterval(S.timer); if (!S.answered) timeOut(); }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  var numEl = document.getElementById('timer-num');
+  var fillEl = document.getElementById('timer-fill');
+  var pct = (S.timeLeft / TIMER_MAX * 100).toFixed(2);
+  numEl.textContent = S.timeLeft; fillEl.style.width = pct+'%';
+  numEl.className = 'timer-num'; fillEl.className = 'timer-fill';
+  if (S.timeLeft <= 5) { numEl.classList.add('danger'); fillEl.classList.add('danger'); }
+  else if (S.timeLeft <= 10) { numEl.classList.add('warn'); fillEl.classList.add('warn'); }
+}
+
+function selectAnswer(idx) {
+  if (S.answered) return;
+  S.answered = true; clearInterval(S.timer);
+  var q = QUESTIONS[S.qi];
+  var btns = document.querySelectorAll('.ans-btn');
+  var elapsed = (Date.now() - S.startMs) / 1000;
+  var ok = (idx === q.correct);
+  btns.forEach(function(b){ b.disabled = true; });
+  if (ok) {
+    btns[idx].classList.add('state-correct');
+    var pts = BASE_PTS, msg = '+'+pts+' DIEM!';
+    if (elapsed < 10) { pts += SPEED_BONUS; msg = '+'+pts+' DIEM! SIEU NHANH!'; }
+    S.score += pts; S.correct += 1; S.streak += 1;
+    if (S.streak > S.maxStreak) S.maxStreak = S.streak;
+    showPopup(msg, 'pop-correct'); spawnConfetti(); playSound(true);
+  } else {
+    btns[idx].classList.add('state-wrong');
+    btns[q.correct].classList.add('state-reveal');
+    btns.forEach(function(b,i){ if (i!==idx && i!==q.correct) b.classList.add('state-dim'); });
+    S.streak = 0; showPopup('SAI ROI! +0', 'pop-wrong'); playSound(false);
+  }
+  document.getElementById('score-val').textContent = S.score;
+  updateStreakRow(); setTimeout(nextQ, 1850);
+}
+
+function timeOut() {
+  S.answered = true;
+  var q = QUESTIONS[S.qi];
+  var btns = document.querySelectorAll('.ans-btn');
+  btns.forEach(function(b){ b.disabled = true; });
+  btns[q.correct].classList.add('state-reveal');
+  btns.forEach(function(b,i){ if (i!==q.correct) b.classList.add('state-dim'); });
+  S.streak = 0; showPopup('HET GIO! +0', 'pop-timeout'); playSound(false);
+  updateStreakRow(); setTimeout(nextQ, 1850);
+}
+
+function nextQ() {
+  S.qi++;
+  if (S.qi >= QUESTIONS.length) { showEndScreen(); return; }
+  var overlay = document.getElementById('q-transition');
+  overlay.textContent = S.qi+1; overlay.classList.add('show');
+  setTimeout(function(){ overlay.classList.remove('show'); loadQ(); }, 440);
+}
+
+function showPopup(msg, cls) {
+  var el = document.getElementById('pts-popup');
+  el.textContent = msg; el.className = cls+' pop-show';
+  setTimeout(function(){ el.className = ''; }, 980);
+}
+
+function spawnConfetti() {
+  var colors = ['#6C63FF','#00D4FF','#7DFF4F','#FFB340','#FF6B9D','#ffffff'];
+  for (var i = 0; i < 30; i++) {
+    var el = document.createElement('div');
+    el.className = 'cf';
+    var sz = (6+Math.random()*8).toFixed(1);
+    var dur = (.7+Math.random()*1.1).toFixed(2);
+    el.style.cssText = ['left:'+(15+Math.random()*70).toFixed(1)+'%','top:-12px','width:'+sz+'px','height:'+sz+'px','background:'+colors[Math.floor(Math.random()*colors.length)],'border-radius:'+(Math.random()>.5?'50%':'2px'),'--d:'+dur+'s'].join(';');
+    document.body.appendChild(el);
+    setTimeout(function(e){ return function(){ e.remove(); }; }(el), 2200);
+  }
+}
+
+function playSound(ok) {
+  var fl = document.createElement('div');
+  fl.style.cssText = ['position:fixed','inset:0','z-index:400','pointer-events:none','background:'+(ok?'rgba(46,204,113,.1)':'rgba(231,76,60,.1)'),'animation:fadeUp .4s ease both'].join(';');
+  document.body.appendChild(fl); setTimeout(function(){ fl.remove(); }, 450);
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var ctx = new AC(); var osc = ctx.createOscillator(); var g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = ok?'sine':'sawtooth'; osc.frequency.value = ok?880:200;
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+.32);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime+.35);
+  } catch(e) {}
+}
+
+function updateStreakRow() {
+  var row = document.getElementById('streak-row');
+  if (S.streak >= 3) {
+    var fires = '';
+    for (var i=0;i<Math.min(S.streak,6);i++) fires += '&#128293;';
+    row.innerHTML = '<span class="fire-txt">'+fires+'</span> '+S.streak+' streak lien tiep!';
+  } else { row.innerHTML = ''; }
+}
+
+function showEndScreen() {
+  var pct = Math.round(S.correct/QUESTIONS.length*100);
+  var grade,gradeClass,title,msg;
+  if (pct>=93){grade='S';gradeClass='gS';title='TUYET VOI - OpenGradient Legend!';msg='Ban chinh la chuyen gia OpenGradient! To the moon va beyond!';}
+  else if(pct>=80){grade='A';gradeClass='gA';title='XUAT SAC - OG Pro!';msg='Kien thuc rat vung chac! Ban hieu ro ve du an nay.';}
+  else if(pct>=60){grade='B';gradeClass='gB';title='KHA - OG Enthusiast!';msg='Kha tot! Hay doc them tai lieu de dat dinh cao hon nhe.';}
+  else if(pct>=40){grade='C';gradeClass='gC';title='TRUNG BINH - Newbie OG';msg='Can hoc them! OpenGradient con nhieu thu vi cho ban kham pha.';}
+  else{grade='D';gradeClass='gD';title='CAN CO GANG HON!';msg='Dung lo! Hay doc whitepaper va thu lai. You got this!';}
+  var gc=document.getElementById('grade-circle');
+  gc.textContent=grade; gc.className='grade-circle '+gradeClass;
+  document.getElementById('end-title').textContent=title;
+  document.getElementById('end-msg').textContent=msg;
+  document.getElementById('es-score').textContent=S.score;
+  document.getElementById('es-correct').textContent=S.correct+'/'+QUESTIONS.length;
+  document.getElementById('es-pct').textContent=pct+'%';
+  document.getElementById('es-streak').textContent='x'+S.maxStreak;
+  var entries=FAKE_LEADERS.map(function(e){return{name:e.name,score:e.score,you:false};});
+  entries.push({name:'Ban',score:S.score,you:true});
+  entries.sort(function(a,b){return b.score-a.score;});
+  var medals=['&#127947;','&#127948;','&#127949;'];
+  var lb=document.getElementById('lb-list');
+  lb.innerHTML='';
+  entries.slice(0,6).forEach(function(entry,i){
+    var li=document.createElement('li');
+    li.className='lb-row'+(entry.you?' is-you':'');
+    var rank=i<3?medals[i]:'#'+(i+1);
+    li.innerHTML='<span class="lb-rank">'+rank+'</span><span class="lb-name">'+(entry.you?'<strong>Ban</strong>':entry.name)+'</span><span class="lb-score">'+entry.score+' diem</span>';
+    li.style.animationDelay=(i*0.09)+'s';
+    lb.appendChild(li);
+  });
+  showScreen('end');
+  if(pct>=60){spawnConfetti();setTimeout(spawnConfetti,600);}
+}
+
+function restartQuiz() { showScreen('intro'); }
+
+document.addEventListener('keydown', function(e){
+  if(e.key==='Enter'||e.key===' '){
+    if(document.getElementById('intro').classList.contains('active')) startQuiz();
+    return;
+  }
+  if(['1','2','3','4'].indexOf(e.key)!==-1){
+    if(document.getElementById('quiz').classList.contains('active')) selectAnswer(parseInt(e.key,10)-1);
+  }
+});
+
+buildStars();
+window.addEventListener('resize', buildStars);
+</script>
+</body>
+</html>
